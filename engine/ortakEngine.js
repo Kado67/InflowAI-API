@@ -1,344 +1,164 @@
-// =======================================
-// InflowAI - ORTAK Motoru
 // engine/ortakEngine.js
-// =======================================
-//
-// Bu dosya, ORTAK'ın asıl "beyin" tarafı.
-// - config/featuresConfig.js içindeki tüm bilgileri kullanır.
-// - Rastgele ama mantıklı metrikler üretir (demo amaçlı).
-// - Uyarıları hesaplar.
-// - Öneriler ve komut sonuçları üretir.
-//
-// NOT:
-// Gerçek platform verilerine bağlanmak istediğimizde
-// sadece aşağıdaki fake veri üreten kısımları
-// gerçek API çağrılarıyla değiştirmemiz yeterli olacak.
+// =========================================
+// Ortak kontrol motoru
+// - Metrikleri analiz eder
+// - Özet, mod ve öneri üretir
+// - config/featuresConfig.js ile birlikte çalışır
+// =========================================
 
-const {
-  meta,
-  goals,
-  layers,
-  metrics,
-  commands,
-  intelligence,
-  alertRules,
-  roadmap,
-  suggestionTemplates,
-} = require("../config/featuresConfig");
+const featureConfig = require("../config/featuresConfig");
 
-// Küçük yardımcı fonksiyonlar ---------------------------
-
-function rand(min, max) {
-  return Math.random() * (max - min) + min;
+// Basit skor hesabı (0–100 arası)
+function normalize(value, idealMin, idealMax) {
+  if (idealMax === undefined) {
+    idealMax = idealMin;
+    idealMin = 0;
+  }
+  if (value <= idealMin) return 20;
+  if (value >= idealMax) return 95;
+  const ratio = (value - idealMin) / (idealMax - idealMin);
+  return Math.round(20 + ratio * 75);
 }
 
-function randInt(min, max) {
-  return Math.floor(rand(min, max));
+// Ortak'ın ruh hâli
+function detectMood({ growthRate, uptime, errorRate }) {
+  if (errorRate > 5 || uptime < 95) return "Dikkatli";
+  if (growthRate >= 5 && uptime >= 99) return "Heyecanlı";
+  if (growthRate >= 2) return "Kararlı";
+  return "Sakin";
 }
 
-function clamp(num, min, max) {
-  return Math.min(Math.max(num, min), max);
-}
+// Konfigürasyona göre aksiyon seç
+function pickActions(metrics) {
+  const actions = [];
 
-function pickRandom(arr) {
-  if (!arr || arr.length === 0) return null;
-  const i = randInt(0, arr.length);
-  return arr[i];
-}
-
-// Mood hesaplama ----------------------------------------
-
-function calculateMood(growth, healthScore) {
-  // growth: %, healthScore: 0-100
-  if (growth >= 6 && healthScore >= 85) return "HEYECANLI";
-  if (growth >= 3 && healthScore >= 75) return "KARARLI";
-  if (growth >= 1 && healthScore >= 60) return "DENGELİ";
-  if (healthScore < 60) return "TEMKİNLİ";
-  return "SAKİN";
-}
-
-// Metrik üretimi (şimdilik demo / sahte) ----------------
-// Burada gerçek InflowAI verilerine bağlanmadık.
-// UI tarafı test ederken platformu "canlı" gibi göstermek için
-// config’teki hedef aralıklara yakın random değerler üretiriz.
-
-function generateMetricValue(metricDef) {
-  const [minTarget, maxTarget] = metricDef.targetRange;
-
-  // Eğer üst sınır "∞" ise, alt sınırın biraz üstünde dolaşan bir değer üret.
-  if (maxTarget === "∞") {
-    const base = typeof minTarget === "number" ? minTarget : 0;
-    // Büyüklüğü yüksek olsa da, aşırı uçmaması için
-    // base * (1–4) arası bir çarpan kullanıyoruz.
-    const factor = rand(1, 4);
-    return base * factor + rand(0, base);
+  if (metrics.growthRate < featureConfig.trackedMetrics.growthRate.idealRange.min) {
+    actions.push("Büyüme düşük: Landing ve içerik akışında A/B testleri başlat.");
+  } else if (
+    metrics.growthRate >= featureConfig.trackedMetrics.growthRate.idealRange.targetMin &&
+    metrics.growthRate <= featureConfig.trackedMetrics.growthRate.idealRange.targetMax
+  ) {
+    actions.push(
+      "Büyüme sağlıklı: Premium ve Kurumsal paketler için sinyal toplamaya devam et."
+    );
+  } else {
+    actions.push(
+      "Büyüme agresif: Altyapı kapasitesini, limitleri ve olası spam trafiğini kontrol et."
+    );
   }
 
-  // Normal aralık: minTarget ile maxTarget arasında ama biraz oynama payı ile
-  const spread = (maxTarget - minTarget) || 1;
-  let value = rand(minTarget - spread * 0.3, maxTarget + spread * 0.3);
+  if (metrics.uptime < featureConfig.trackedMetrics.uptime.idealRange.min) {
+    actions.push(
+      "Uptime kritik: İzleme, loglama ve hata bildirimlerini önceliklendir."
+    );
+  }
 
-  // Negatif saçmalık olmasın
-  if (value < 0) value = Math.abs(value);
+  if (metrics.apiLatency > featureConfig.trackedMetrics.apiLatency.idealRange.warn) {
+    actions.push(
+      "API gecikmesi yüksek: Render planını, sorgu optimizasyonlarını ve gereksiz istekleri gözden geçir."
+    );
+  }
 
-  return value;
+  if (metrics.errorRate > featureConfig.trackedMetrics.errorRate.idealRange.max) {
+    actions.push(
+      "Hata oranı yüksek: En çok hata üreten endpoint ve sayfaları loglardan tespit et."
+    );
+  }
+
+  if (actions.length === 0) {
+    actions.push(
+      "Her şey stabil görünüyor: İçerik üretimine ve uzun vadeli büyüme planlarına odaklan."
+    );
+  }
+
+  return actions;
 }
 
-// Tüm ana metrikleri üret
-function generateLiveMetrics() {
-  const traffic = generateMetricValue(metrics.traffic); // ziyaret/15dk
-  const activeUsers = generateMetricValue(metrics.activeUsers);
-  const growthRate = generateMetricValue(metrics.growthRate);
-  const healthScore = clamp(generateMetricValue(metrics.healthScore), 0, 100);
-  const uptime = clamp(generateMetricValue(metrics.uptime), 0, 100);
-  const apiLatency = generateMetricValue(metrics.apiLatency);
-  const errorRate = generateMetricValue(metrics.errorRate);
+// Ana analiz fonksiyonu
+function analyzeMetrics(inputMetrics = {}) {
+  const metrics = {
+    traffic: inputMetrics.traffic ?? 120,
+    activeUsers: inputMetrics.activeUsers ?? 90,
+    growthRate: inputMetrics.growthRate ?? 3.4,
+    uptime: inputMetrics.uptime ?? 99.2,
+    errorRate: inputMetrics.errorRate ?? 0.7,
+    apiLatency: inputMetrics.apiLatency ?? 420,
+  };
+
+  const scores = {
+    trafficScore: normalize(
+      metrics.traffic,
+      featureConfig.trackedMetrics.traffic.idealRange.minPer15Min,
+      featureConfig.trackedMetrics.traffic.idealRange.targetPer15Min
+    ),
+    activeScore: normalize(
+      metrics.activeUsers,
+      featureConfig.trackedMetrics.activeUsers.idealRange.min,
+      featureConfig.trackedMetrics.activeUsers.idealRange.target
+    ),
+    growthScore: normalize(
+      metrics.growthRate,
+      featureConfig.trackedMetrics.growthRate.idealRange.min,
+      featureConfig.trackedMetrics.growthRate.idealRange.targetMax
+    ),
+    uptimeScore: normalize(
+      metrics.uptime,
+      featureConfig.trackedMetrics.uptime.idealRange.min,
+      featureConfig.trackedMetrics.uptime.idealRange.target
+    ),
+    stabilityScore: 100 - normalize(
+      metrics.errorRate,
+      0,
+      featureConfig.trackedMetrics.errorRate.idealRange.max * 3
+    ),
+  };
+
+  const globalHealth = Math.round(
+    (scores.trafficScore +
+      scores.activeScore +
+      scores.growthScore +
+      scores.uptimeScore +
+      scores.stabilityScore) /
+      5
+  );
+
+  const mood = detectMood(metrics);
+  const actions = pickActions(metrics);
 
   return {
-    traffic: Math.round(traffic),
-    activeUsers: Math.round(activeUsers),
-    growthRate: Number(growthRate.toFixed(1)),
-    healthScore: Math.round(healthScore),
-    uptime: Number(uptime.toFixed(2)),
-    apiLatency: Math.round(apiLatency),
-    errorRate: Number(errorRate.toFixed(2)),
+    metrics,
+    scores,
+    globalHealth,
+    mood,
+    actions,
+    configVersion: featureConfig.version,
   };
 }
 
-// Uyarı hesaplama ---------------------------------------
+// Ortak özeti – UI’da gösterilecek metinler
+function buildSummary() {
+  const analysis = analyzeMetrics();
 
-function evaluateAlerts(liveMetrics) {
-  const results = [];
-
-  for (const rule of alertRules) {
-    const metricKey = rule.condition.metric;
-    const operator = rule.condition.operator;
-    const value = rule.condition.value;
-
-    const current = liveMetrics[metricKey];
-
-    if (typeof current !== "number") continue;
-
-    let triggered = false;
-
-    switch (operator) {
-      case "<":
-        triggered = current < value;
-        break;
-      case "<=":
-        triggered = current <= value;
-        break;
-      case ">":
-        triggered = current > value;
-        break;
-      case ">=":
-        triggered = current >= value;
-        break;
-      case "==":
-        triggered = current === value;
-        break;
-      default:
-        break;
-    }
-
-    if (triggered) {
-      results.push({
-        id: rule.id,
-        description: rule.description,
-        severity: rule.severity,
-        metric: metricKey,
-        currentValue: current,
-        threshold: value,
-        suggestionKey: rule.suggestionKey || null,
-      });
-    }
-  }
-
-  return results;
-}
-
-// Öneri üretimi -----------------------------------------
-
-function generateSuggestions(liveMetrics, alerts) {
-  const suggestions = [];
-
-  // Uyarılara göre özel öneriler
-  for (const alert of alerts) {
-    if (!alert.suggestionKey) continue;
-    const templateList = suggestionTemplates[alert.suggestionKey];
-    const text = pickRandom(templateList);
-    if (!text) continue;
-
-    suggestions.push({
-      source: "alert",
-      alertId: alert.id,
-      severity: alert.severity,
-      text,
-    });
-  }
-
-  // Genel büyüme / içerik önerileri (her durumda)
-  const featureIdea = pickRandom(suggestionTemplates.featureIdeas);
-  if (featureIdea) {
-    suggestions.push({
-      source: "feature",
-      text: featureIdea,
-    });
-  }
-
-  // Metriklere göre kısa yorumlar
-  if (liveMetrics.growthRate < 1.5) {
-    suggestions.push({
-      source: "metric",
-      text: "Büyüme oranı düşük görünüyor. Growth katmanında yeni denemeler planla, özellikle organik arama ve içerik tarafına ağırlık ver.",
-    });
-  } else if (liveMetrics.growthRate > 5) {
-    suggestions.push({
-      source: "metric",
-      text: "Büyüme oranı oldukça yüksek. Bu trendi bozmadan sistem sağlığını korumak için günlük log ve hata takibini ihmal etme.",
-    });
-  }
-
-  if (liveMetrics.apiLatency > 2000) {
-    suggestions.push({
-      source: "metric",
-      text: "API gecikmesi çok yüksek. Render cold-start gecikmesini azaltmak için arka planda periyodik ping mekanizması kullanabilirsin.",
-    });
-  }
-
-  if (liveMetrics.uptime < 99) {
-    suggestions.push({
-      source: "metric",
-      text: "Uptime hedefin 99% üzerinde olmalı. Hatalı deploy, restart veya bakım sürelerini gözden geçir.",
-    });
-  }
-
-  return suggestions;
-}
-
-// Ortak özeti (UI'daki büyük metin için) ----------------
-
-function buildOrtakSummary(liveMetrics) {
-  const { traffic, activeUsers, growthRate, healthScore } = liveMetrics;
-  const mood = calculateMood(growthRate, healthScore);
-
-  let healthText = "dengeli";
-  if (healthScore >= 85) healthText = "çok iyi";
-  else if (healthScore >= 70) healthText = "iyi";
-  else if (healthScore >= 60) healthText = "orta";
-  else healthText = "riskli";
-
-  const sentence =
-    `Aktif ziyaretçi yaklaşık ${activeUsers}. ` +
-    `Son 15 dakikalık trafik ${traffic} civarında. ` +
-    `Günlük büyüme ${growthRate.toFixed(1)}%. ` +
-    `Sistem sağlık skoru ${healthScore}/100 ve genel durum ${healthText}. ` +
-    `Ortak şu anda "${mood}" modunda platformu izliyor ve yeni fırsatlar arıyor.`;
-
-  return { mood, text: sentence };
-}
-
-// Komut çalıştırma --------------------------------------
-
-function runCommand(commandId, options = {}) {
-  const cmd = commands[commandId];
-  if (!cmd) {
-    return {
-      ok: false,
-      error: "Bilinmeyen komut",
-      commandId,
-    };
-  }
-
-  // Şimdilik gerçek işlem yok, sadece akıllı metin döndürüyoruz.
-  // Daha sonra burada gerçek analizler, veri sorguları vb. çağrılabilir.
-  const now = new Date().toISOString();
-
-  let resultText = "";
-
-  switch (commandId) {
-    case "scanPlatform":
-      resultText =
-        "Tüm katmanlar tarandı. Temel sağlık, büyüme ve servis durumunda kritik bir sorun görünmüyor. Detaylı rapor Kontrol Merkezindeki kartlarda güncellendi.";
-      break;
-    case "findMissingFeatures":
-      resultText =
-        "Eksik özellik analizi tamamlandı. Growth ve Sharing katmanları için yeni içerik formatları, referans sistemleri ve mini istatistik panelleri öneriliyor.";
-      break;
-    case "optimizeGrowth":
-      resultText =
-        "Büyüme optimizasyonu için aksiyon listesi hazırlandı: yüksek performanslı içeriklerin klonlanması, A/B testli başlık denemeleri ve kayıt akışının sadeleştirilmesi.";
-      break;
-    case "monitorApiHealth":
-      resultText =
-        "API sağlık takibi başlatıldı. Render gecikmeleri, hata oranı ve uptime metrikleri 60 saniyede bir kontrol edilip loglanacak.";
-      break;
-    case "securitySweep":
-      resultText =
-        "Güvenlik taraması tamamlandı. Olağan dışı istek veya şüpheli IP davranışı tespit edilmesi durumunda uyarı üretilecek.";
-      break;
-    case "contentInsights":
-      resultText =
-        "İçerik içgörüleri çıkarıldı. En çok etkileşim alan içerik tipi ve konu etiketleri belirlendi; yeni içerik planı buna göre önerildi.";
-      break;
-    case "emergencyMode":
-      resultText =
-        "Acil durum senaryosu aktif. Kritik hata durumunda trafiği güvenli moda almak ve gerektiğinde 'bakım moduna geç' önerisi sunmak üzere izleme yapılıyor.";
-      break;
-    case "roadmapAdvisor":
-      resultText =
-        "Yol haritası analizi oluşturuldu. Önce temel sağlık ve büyüme, ardından otomasyon ve sonsuzluk merkezi adımları öneriliyor.";
-      break;
-    default:
-      resultText =
-        "Komut başarıyla işlendi. İlgili katmanlar için detaylı rapor ve öneriler güncellendi.";
-  }
+  const summaryText = `Aktif ziyaretçi yaklaşık ${analysis.metrics.activeUsers}. Günlük büyüme ${analysis.metrics.growthRate.toFixed(
+    1
+  )}%. Sistem sağlığı yaklaşık ${analysis.globalHealth}/100 seviyesinde. Ortak şu anda "${analysis.mood}" modunda platformu izliyor ve ${
+    analysis.actions[0]
+  }`;
 
   return {
-    ok: true,
-    id: cmd.id,
-    label: cmd.label,
-    description: cmd.description,
-    categories: cmd.categories || [],
-    executedAt: now,
-    resultText,
-    options,
+    mood: analysis.mood,
+    summary: summaryText,
+    healthScore: analysis.globalHealth,
+    mainActionHint: analysis.actions[0],
+    allActions: analysis.actions,
+    metrics: analysis.metrics,
+    scores: analysis.scores,
   };
 }
 
-// Ortak durum özeti (API endpoint için) -----------------
-
-function getOrtakStatus() {
-  const liveMetrics = generateLiveMetrics();
-  const alerts = evaluateAlerts(liveMetrics);
-  const suggestions = generateSuggestions(liveMetrics, alerts);
-  const summary = buildOrtakSummary(liveMetrics);
-
-  return {
-    meta,
-    goals,
-    roadmap,
-    layers,
-    intelligence,
-    liveMetrics,
-    alerts,
-    suggestions,
-    summary,
-    timestamp: new Date().toISOString(),
-  };
-}
-
-// Dışa aktarma ------------------------------------------
-
+// Dışa aktar
 module.exports = {
-  getOrtakStatus,
-  runCommand,
-  // config’ten doğrudan erişmek isteyebileceğin şeyleri de dışa atalım:
-  meta,
-  goals,
-  layers,
-  metrics,
-  commands,
-  roadmap,
-  intelligence,
+  analyzeMetrics,
+  buildSummary,
+  featureConfig,
 };
