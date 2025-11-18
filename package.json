@@ -1,18 +1,29 @@
 {
   "name": "inflowai-api",
   "version": "1.0.0",
-  "description": "",
+  "description": "InflowAI Official API — Core, Ortak Engine, Status & Command Endpoints",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "body-parser": "^2.2.0",
+    "express": "^4.18.2",
     "cors": "^2.8.5",
-    "express": "^5.1.0"
-  }
+    "body-parser": "^1.20.2",
+    "morgan": "^1.10.0",
+    "axios": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "keywords": [
+    "inflowai",
+    "api",
+    "core",
+    "engine",
+    "status",
+    "command"
+  ],
+  "author": "Kado67",
+  "license": "MIT"
 }
