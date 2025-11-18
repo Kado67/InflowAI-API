@@ -1,90 +1,94 @@
-// =====================================
-// InflowAI API – app.js (Tam entegre)
-// =====================================
+// app.js
+// =========================================
+// InflowAI API - Uygulama tanımı
+// Ortak motoru ve genel endpoint'ler
+// =========================================
 
 const express = require("express");
 const cors = require("cors");
+const morgan = require("morgan");
+const { analyzeMetrics, buildSummary, featureConfig } = require("./engine/ortakEngine");
 
 const app = express();
 
-// Ortam ayarları
-app.use(cors());
+// Orijin kısıtlamasını şimdilik serbest bırakıyoruz
+app.use(
+  cors({
+    origin: "*",
+  })
+);
+
+// JSON body desteği
 app.use(express.json());
 
-// ========================
-// 1) API Test Endpoint
-// ========================
+// Basit log
+app.use(morgan("tiny"));
+
+// Küçük sağlık kontrolü – UI ve Render logları için
 app.get("/", (req, res) => {
   res.json({
-    status: "InflowAI API çalışıyor ✔",
-    message: "Bağlantı başarılı, sistem aktif.",
-    version: "1.0.0"
+    status: "ok",
+    message: "InflowAI API aktif",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
   });
 });
 
-
-// ========================
-// 2) Kullanıcı Giriş
-// ========================
-app.post("/login", (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password)
-    return res.json({ success: false, message: "Eksik bilgi" });
-
-  return res.json({
-    success: true,
-    message: "Giriş başarılı",
-    token: "sample-login-token"
+// Aynı bilgiyi /api/status üzerinden de ver
+app.get("/api/status", (req, res) => {
+  res.json({
+    status: "ok",
+    message: "InflowAI API durumu",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
   });
 });
 
+// Ortak genel özeti
+app.get("/api/ortak/summary", (req, res) => {
+  const summary = buildSummary();
 
-// ========================
-// 3) Kullanıcı Kayıt
-// ========================
-app.post("/register", (req, res) => {
-  const { email, password } = req.body;
-
-  return res.json({
-    success: true,
-    message: "Kayıt başarılı"
+  res.json({
+    status: "ok",
+    data: summary,
+    checkedAt: new Date().toISOString(),
   });
 });
 
+// Ortak analiz endpoint'i – UI ileride gerçek metrik gönderdiğinde
+app.post("/api/ortak/analyze", (req, res) => {
+  const inputMetrics = req.body || {};
+  const analysis = analyzeMetrics(inputMetrics);
 
-// ========================
-// 4) Kontrol Merkezi – Komut
-// ========================
-app.post("/kontrol", (req, res) => {
-  const { komut } = req.body;
-
-  return res.json({
-    success: true,
-    cevap: `Komut işlendi: ${komut}`
+  res.json({
+    status: "ok",
+    data: analysis,
+    receivedMetrics: inputMetrics,
   });
 });
 
-
-// ========================
-// 5) Sonsuzluk Merkezi
-// ========================
-app.post("/sonsuzluk", (req, res) => {
-  const { sorun } = req.body;
-
-  return res.json({
-    success: true,
-    cozum: `Sorun çözüldü: ${sorun}`
+// Ortak görev ve özellik listesi – komut haritası için
+app.get("/api/ortak/features", (req, res) => {
+  res.json({
+    status: "ok",
+    data: {
+      strategicGoals: featureConfig.strategicGoals,
+      trackedMetrics: featureConfig.trackedMetrics,
+      actionTemplates: featureConfig.actionTemplates,
+      modes: featureConfig.modes,
+      version: featureConfig.version,
+      lastUpdated: featureConfig.lastUpdated,
+    },
   });
 });
 
-
-// ========================
-// SUNUCU BAŞLATMA
-// Render için zorunlu PORT ayarı
-// ========================
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(`InflowAI API çalışıyor → Port: ${PORT}`);
+// 404 fallback
+app.use((req, res) => {
+  res.status(404).json({
+    status: "error",
+    message: "Endpoint bulunamadı.",
+    path: req.originalUrl,
+  });
 });
+
+module.exports = app;
