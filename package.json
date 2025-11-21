@@ -1,29 +1,13 @@
 {
   "name": "inflowai-api",
   "version": "1.0.0",
-  "description": "InflowAI Official API - Ortak Motor, Komut Sistemi ve Durum Servisi",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
+    "express": "^4.19.2",
     "cors": "^2.8.5",
-    "body-parser": "^1.20.2",
-    "morgan": "^1.10.0",
-    "axios": "^1.6.0"
-  },
-  "engines": {
-    "node": ">=16"
-  },
-  "keywords": [
-    "inflowai",
-    "api",
-    "core",
-    "engine",
-    "status",
-    "command"
-  ],
-  "author": "Kado67",
-  "license": "MIT"
+    "morgan": "^1.10.0"
+  }
 }
