@@ -1,7 +1,6 @@
 // app.js
 // =========================================
-// InflowAI API - Uygulama tanımı
-// Ortak motoru ve genel endpoint'ler
+// InflowAI API - Ana Uygulama
 // =========================================
 
 const express = require("express");
@@ -15,20 +14,16 @@ const {
 
 const app = express();
 
-// Orijin kısıtlamasını şimdilik serbest bırakıyoruz
-app.use(
-  cors({
-    origin: "*",
-  })
-);
+// CORS (UI bağlanabilsin diye)
+app.use(cors({ origin: "*" }));
 
-// JSON body desteği
+// JSON desteği
 app.use(express.json());
 
-// Basit log
+// Log
 app.use(morgan("tiny"));
 
-// Küçük sağlık kontrolü – UI ve Render logları için
+// ===== Sağlık kontrolü =====
 app.get("/", (req, res) => {
   res.json({
     status: "ok",
@@ -38,7 +33,7 @@ app.get("/", (req, res) => {
   });
 });
 
-// Aynı bilgiyi /api/status üzerinden de ver
+// Status
 app.get("/api/status", (req, res) => {
   res.json({
     status: "ok",
@@ -48,30 +43,26 @@ app.get("/api/status", (req, res) => {
   });
 });
 
-// Ortak genel özeti
+// Öz summary
 app.get("/api/ortak/summary", (req, res) => {
-  const summary = buildSummary();
-
   res.json({
     status: "ok",
-    data: summary,
+    data: buildSummary(),
     checkedAt: new Date().toISOString(),
   });
 });
 
-// Ortak analiz endpoint'i – UI metrik gönderdiğinde
+// UI -> API analiz
 app.post("/api/ortak/analyze", (req, res) => {
-  const inputMetrics = req.body || {};
-  const analysis = analyzeMetrics(inputMetrics);
-
+  const metrics = req.body || {};
   res.json({
     status: "ok",
-    data: analysis,
-    receivedMetrics: inputMetrics,
+    data: analyzeMetrics(metrics),
+    received: metrics,
   });
 });
 
-// Ortak görev + özellik listesi
+// Özellik listesi
 app.get("/api/ortak/features", (req, res) => {
   res.json({
     status: "ok",
@@ -79,11 +70,11 @@ app.get("/api/ortak/features", (req, res) => {
   });
 });
 
-// 404 fallback
+// 404
 app.use((req, res) => {
   res.status(404).json({
     status: "error",
-    message: "Endpoint bulunamadı.",
+    message: "Endpoint bulunamadı",
     path: req.originalUrl,
   });
 });
