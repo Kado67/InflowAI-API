@@ -7,6 +7,7 @@
 // =========================================
 
 const featureConfig = require("../config/featuresConfig");
+const M = featureConfig.trackedMetricsMap; // Engine metrik haritası
 
 // Basit skor hesabı (0–100 arası)
 function normalize(value, idealMin, idealMax) {
@@ -32,43 +33,31 @@ function detectMood({ growthRate, uptime, errorRate }) {
 function pickActions(metrics) {
   const actions = [];
 
-  if (metrics.growthRate < featureConfig.trackedMetrics.growthRate.idealRange.min) {
+  if (metrics.growthRate < M.growthRate.idealRange.min) {
     actions.push("Büyüme düşük: Landing ve içerik akışında A/B testleri başlat.");
   } else if (
-    metrics.growthRate >= featureConfig.trackedMetrics.growthRate.idealRange.targetMin &&
-    metrics.growthRate <= featureConfig.trackedMetrics.growthRate.idealRange.targetMax
+    metrics.growthRate >= M.growthRate.idealRange.targetMin &&
+    metrics.growthRate <= M.growthRate.idealRange.targetMax
   ) {
-    actions.push(
-      "Büyüme sağlıklı: Premium ve Kurumsal paketler için sinyal toplamaya devam et."
-    );
+    actions.push("Büyüme sağlıklı: Premium ve Kurumsal paketler için sinyal toplamaya devam et.");
   } else {
-    actions.push(
-      "Büyüme agresif: Altyapı kapasitesini, limitleri ve olası spam trafiğini kontrol et."
-    );
+    actions.push("Büyüme agresif: Altyapı kapasitesini, limitleri ve olası spam trafiğini kontrol et.");
   }
 
-  if (metrics.uptime < featureConfig.trackedMetrics.uptime.idealRange.min) {
-    actions.push(
-      "Uptime kritik: İzleme, loglama ve hata bildirimlerini önceliklendir."
-    );
+  if (metrics.uptime < M.uptime.idealRange.min) {
+    actions.push("Uptime kritik: İzleme, loglama ve hata bildirimlerini önceliklendir.");
   }
 
-  if (metrics.apiLatency > featureConfig.trackedMetrics.apiLatency.idealRange.warn) {
-    actions.push(
-      "API gecikmesi yüksek: Render planını, sorgu optimizasyonlarını ve gereksiz istekleri gözden geçir."
-    );
+  if (metrics.apiLatency > M.apiLatency.idealRange.warn) {
+    actions.push("API gecikmesi yüksek: Render planını, sorgu optimizasyonlarını ve gereksiz istekleri gözden geçir.");
   }
 
-  if (metrics.errorRate > featureConfig.trackedMetrics.errorRate.idealRange.max) {
-    actions.push(
-      "Hata oranı yüksek: En çok hata üreten endpoint ve sayfaları loglardan tespit et."
-    );
+  if (metrics.errorRate > M.errorRate.idealRange.max) {
+    actions.push("Hata oranı yüksek: En çok hata üreten endpoint ve sayfaları loglardan tespit et.");
   }
 
   if (actions.length === 0) {
-    actions.push(
-      "Her şey stabil görünüyor: İçerik üretimine ve uzun vadeli büyüme planlarına odaklan."
-    );
+    actions.push("Her şey stabil görünüyor: İçerik üretimine ve uzun vadeli büyüme planlarına odaklan.");
   }
 
   return actions;
@@ -88,28 +77,28 @@ function analyzeMetrics(inputMetrics = {}) {
   const scores = {
     trafficScore: normalize(
       metrics.traffic,
-      featureConfig.trackedMetrics.traffic.idealRange.minPer15Min,
-      featureConfig.trackedMetrics.traffic.idealRange.targetPer15Min
+      M.traffic.idealRange.minPer15Min,
+      M.traffic.idealRange.targetPer15Min
     ),
     activeScore: normalize(
       metrics.activeUsers,
-      featureConfig.trackedMetrics.activeUsers.idealRange.min,
-      featureConfig.trackedMetrics.activeUsers.idealRange.target
+      M.activeUsers.idealRange.min,
+      M.activeUsers.idealRange.target
     ),
     growthScore: normalize(
       metrics.growthRate,
-      featureConfig.trackedMetrics.growthRate.idealRange.min,
-      featureConfig.trackedMetrics.growthRate.idealRange.targetMax
+      M.growthRate.idealRange.min,
+      M.growthRate.idealRange.targetMax
     ),
     uptimeScore: normalize(
       metrics.uptime,
-      featureConfig.trackedMetrics.uptime.idealRange.min,
-      featureConfig.trackedMetrics.uptime.idealRange.target
+      M.uptime.idealRange.min,
+      M.uptime.idealRange.target
     ),
     stabilityScore: 100 - normalize(
       metrics.errorRate,
       0,
-      featureConfig.trackedMetrics.errorRate.idealRange.max * 3
+      M.errorRate.idealRange.max * 3
     ),
   };
 
@@ -118,8 +107,7 @@ function analyzeMetrics(inputMetrics = {}) {
       scores.activeScore +
       scores.growthScore +
       scores.uptimeScore +
-      scores.stabilityScore) /
-      5
+      scores.stabilityScore) / 5
   );
 
   const mood = detectMood(metrics);
@@ -139,11 +127,11 @@ function analyzeMetrics(inputMetrics = {}) {
 function buildSummary() {
   const analysis = analyzeMetrics();
 
-  const summaryText = `Aktif ziyaretçi yaklaşık ${analysis.metrics.activeUsers}. Günlük büyüme ${analysis.metrics.growthRate.toFixed(
-    1
-  )}%. Sistem sağlığı yaklaşık ${analysis.globalHealth}/100 seviyesinde. Ortak şu anda "${analysis.mood}" modunda platformu izliyor ve ${
-    analysis.actions[0]
-  }`;
+  const summaryText =
+    `Aktif ziyaretçi yaklaşık ${analysis.metrics.activeUsers}. ` +
+    `Günlük büyüme ${analysis.metrics.growthRate.toFixed(1)}%. ` +
+    `Sistem sağlığı ${analysis.globalHealth}/100 seviyesinde. ` +
+    `Ortak şu anda "${analysis.mood}" modunda ve ${analysis.actions[0]}`;
 
   return {
     mood: analysis.mood,
@@ -156,9 +144,20 @@ function buildSummary() {
   };
 }
 
+// UI için temiz config (dizi + template)
+const featureConfigUI = {
+  strategicGoals: featureConfig.strategicGoals,
+  trackedMetrics: featureConfig.trackedMetrics,        // DİZİ
+  trackedMetricsMap: featureConfig.trackedMetricsMap,  // OBJE (detaylar)
+  actionTemplates: featureConfig.actionTemplates,
+  modes: featureConfig.modes,
+  version: featureConfig.version,
+  lastUpdated: featureConfig.lastUpdated
+};
+
 // Dışa aktar
 module.exports = {
   analyzeMetrics,
   buildSummary,
-  featureConfig,
+  featureConfig: featureConfigUI,
 };
