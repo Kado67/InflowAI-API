@@ -7,7 +7,11 @@
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
-const { analyzeMetrics, buildSummary, featureConfig } = require("./engine/ortakEngine");
+const {
+  analyzeMetrics,
+  buildSummary,
+  featureConfig,
+} = require("./engine/ortakEngine");
 
 const app = express();
 
@@ -55,7 +59,7 @@ app.get("/api/ortak/summary", (req, res) => {
   });
 });
 
-// Ortak analiz endpoint'i – UI ileride gerçek metrik gönderdiğinde
+// Ortak analiz endpoint'i – UI gerçek metrik gönderdiğinde
 app.post("/api/ortak/analyze", (req, res) => {
   const inputMetrics = req.body || {};
   const analysis = analyzeMetrics(inputMetrics);
@@ -68,17 +72,11 @@ app.post("/api/ortak/analyze", (req, res) => {
 });
 
 // Ortak görev ve özellik listesi – komut haritası için
+// UI'nin beklediği format engine tarafından hazır geliyor
 app.get("/api/ortak/features", (req, res) => {
   res.json({
     status: "ok",
-    data: {
-      strategicGoals: featureConfig.strategicGoals,
-      trackedMetrics: featureConfig.trackedMetrics,
-      actionTemplates: featureConfig.actionTemplates,
-      modes: featureConfig.modes,
-      version: featureConfig.version,
-      lastUpdated: featureConfig.lastUpdated,
-    },
+    data: featureConfig,
   });
 });
 
@@ -92,3 +90,4 @@ app.use((req, res) => {
 });
 
 module.exports = app;
+```0
