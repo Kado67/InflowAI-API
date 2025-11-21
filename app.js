@@ -59,7 +59,7 @@ app.get("/api/ortak/summary", (req, res) => {
   });
 });
 
-// Ortak analiz endpoint'i – UI gerçek metrik gönderdiğinde
+// Ortak analiz endpoint'i – UI metrik gönderdiğinde
 app.post("/api/ortak/analyze", (req, res) => {
   const inputMetrics = req.body || {};
   const analysis = analyzeMetrics(inputMetrics);
@@ -71,8 +71,7 @@ app.post("/api/ortak/analyze", (req, res) => {
   });
 });
 
-// Ortak görev ve özellik listesi – komut haritası için
-// UI'nin beklediği format engine tarafından hazır geliyor
+// Ortak görev + özellik listesi
 app.get("/api/ortak/features", (req, res) => {
   res.json({
     status: "ok",
@@ -90,4 +89,3 @@ app.use((req, res) => {
 });
 
 module.exports = app;
-```0
