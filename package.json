@@ -1,7 +1,7 @@
 {
   "name": "inflowai-api",
   "version": "1.0.0",
-  "description": "InflowAI Official API — Core, Ortak Engine, Status & Command Endpoints",
+  "description": "InflowAI Official API - Ortak Motor, Komut Sistemi ve Durum Servisi",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
