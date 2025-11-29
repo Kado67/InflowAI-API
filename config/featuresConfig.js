@@ -1,139 +1,68 @@
 // config/featuresConfig.js
-// =========================================
-// InflowAI Ortak Feature Config (API + UI)
-// trackedMetrics: UI için DİZİ
-// trackedMetricsMap: Engine için OBJE
-// =========================================
+// InflowAI E-Ticaret API - Özellik Konfigürasyonu
 
-module.exports = {
+const featureConfig = {
+  platformName: "InflowAI E-Commerce",
   version: "1.0.0",
-  lastUpdated: "2025-11-21",
 
-  // UI'da “Ortak hedefleri” olarak gösterilecek
-  strategicGoals: [
-    "Platform büyümesini sürdürülebilir şekilde artır",
-    "Premium / Kurumsal / B2B geçiş sinyallerini topla",
-    "Uptime ve performansı stabil tut",
-    "Spam / bot trafiğini filtrele",
-    "Veri kaybını sıfıra indir (Sonsuzluk Merkezi uyumu)"
-  ],
+  defaultCurrency: "TRY",
+  supportedCurrencies: ["TRY", "USD", "EUR"],
 
-  // UI DİZİ ister (forEach/map)
-  trackedMetrics: [
-    "traffic",
-    "activeUsers",
-    "growthRate",
-    "uptime",
-    "errorRate",
-    "apiLatency"
-  ],
+  defaultLocale: "tr-TR",
+  supportedLocales: ["tr-TR", "en-US"],
 
-  // Engine OBJE ister (idealRange’ler burada)
-  trackedMetricsMap: {
-    traffic: {
-      label: "Trafik (15dk)",
-      unit: "visit",
-      idealRange: {
-        minPer15Min: 50,
-        targetPer15Min: 120
-      }
+  modules: {
+    catalog: {
+      enabled: true,
+      variants: true,
+      stockTracking: true,
     },
-
-    activeUsers: {
-      label: "Aktif Kullanıcı",
-      unit: "user",
-      idealRange: {
-        min: 30,
-        target: 90
-      }
+    categories: {
+      enabled: true,
     },
-
-    growthRate: {
-      label: "Büyüme Oranı",
-      unit: "%",
-      idealRange: {
-        min: 1,
-        targetMin: 2,
-        targetMax: 6
-      }
+    orders: {
+      enabled: true,
+      guestCheckout: true,
     },
-
-    uptime: {
-      label: "Uptime",
-      unit: "%",
-      idealRange: {
-        min: 95,
-        target: 99.5
-      }
+    customers: {
+      enabled: true,
     },
-
-    errorRate: {
-      label: "Hata Oranı",
-      unit: "%",
-      idealRange: {
-        max: 2
-      }
+    payments: {
+      enabled: true,
+      mode: "manual", // şimdilik MANUEL ödeme (havale / kapıda vb.)
+      providers: {
+        paytr: {
+          enabled: false, // PayTR anahtarlarını aldığında true yapılacak
+          mode: "test",
+        },
+      },
     },
-
-    apiLatency: {
-      label: "API Gecikme",
-      unit: "ms",
-      idealRange: {
-        warn: 450
-      }
-    }
+    shipping: {
+      enabled: true,
+      mode: "manual", // şimdilik manuel kargo
+      providers: {
+        manual: { enabled: true },
+        mng: { enabled: false },
+        yurtiçi: { enabled: false },
+        aras: { enabled: false },
+        ptt: { enabled: false },
+        ups: { enabled: false },
+      },
+    },
+    coupons: {
+      enabled: true,
+    },
+    analytics: {
+      enabled: true,
+      realtime: true,
+    },
   },
 
-  // UI'da “Hızlı İşlemler / Komutlar” bölümü
-  actionTemplates: [
-    {
-      id: "growth_pulse",
-      name: "Büyüme Paneli",
-      desc: "Growth katmanını ve trafik ivmesini analiz eder",
-      layer: "growth"
-    },
-    {
-      id: "security_shield",
-      name: "Güvenlik Paneli",
-      desc: "Security katmanındaki zafiyetleri ve riskleri tarar",
-      layer: "security"
-    },
-    {
-      id: "services_hub",
-      name: "Servisler",
-      desc: "Services katmanının aktifliğini kontrol eder",
-      layer: "services"
-    },
-    {
-      id: "sharing_sync",
-      name: "Sharing",
-      desc: "Paylaşım / virallik / sosyal sinyal takibini açar",
-      layer: "sharing"
-    },
-    {
-      id: "updating_core",
-      name: "Updating",
-      desc: "Sistem güncelleme planı ve versiyon kontrolü",
-      layer: "updating"
-    },
-    {
-      id: "infinity_guard",
-      name: "Sonsuzluk Merkezi",
-      desc: "Veri yedek, arıza kurtarma ve hayat sigortası katmanı",
-      layer: "infinity"
-    }
-  ],
-
-  // UI’da sekmeler / modlar
-  modes: [
-    "overview",
-    "core",
-    "growth",
-    "services",
-    "sharing",
-    "security",
-    "updating",
-    "monetization",
-    "infinity"
-  ]
+  limits: {
+    maxProducts: 100000,
+    maxCategories: 5000,
+    maxImagesPerProduct: 20,
+  },
 };
+
+module.exports = { featureConfig };
