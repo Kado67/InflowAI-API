@@ -18,6 +18,10 @@ const ACCESS_TOKEN_EXPIRES_IN =
 const REFRESH_TOKEN_EXPIRES_IN =
   process.env.JWT_REFRESH_EXPIRES_IN || "30d";
 
+// ------------------------------------------------------------------
+//  Yardımcı fonksiyonlar
+// ------------------------------------------------------------------
+
 function signAccessToken(user) {
   return jwt.sign(
     { sub: user._id.toString(), role: user.role },
@@ -47,7 +51,11 @@ async function saveRefreshToken(userId, refreshToken, userAgent, ip) {
   });
 }
 
-async function register({ name, email, password, phone }) {
+// ------------------------------------------------------------------
+//  İş mantığı
+// ------------------------------------------------------------------
+
+export async function register({ name, email, password, phone }) {
   const exist = await User.findOne({ email });
   if (exist) {
     const error = new Error("Bu e‑posta zaten kullanımda.");
@@ -74,7 +82,7 @@ async function register({ name, email, password, phone }) {
   return { user, accessToken, refreshToken };
 }
 
-async function login({ email, password, userAgent, ip }) {
+export async function login({ email, password, userAgent, ip }) {
   const user = await User.findOne({ email });
 
   if (!user) {
@@ -101,11 +109,11 @@ async function login({ email, password, userAgent, ip }) {
   return { user, accessToken, refreshToken };
 }
 
-async function logout(userId, refreshToken) {
+export async function logout(userId, refreshToken) {
   await AuthToken.deleteOne({ user: userId, refreshToken });
 }
 
-async function refreshTokens(refreshToken, userAgent, ip) {
+export async function refreshTokens(refreshToken, userAgent, ip) {
   if (!refreshToken) {
     const error = new Error("Refresh token eksik.");
     error.status = 400;
@@ -131,6 +139,7 @@ async function refreshTokens(refreshToken, userAgent, ip) {
 
   const user = tokenDoc.user;
 
+  // Eski token’ı sil
   await AuthToken.deleteOne({ _id: tokenDoc._id });
 
   const newAccess = signAccessToken(user);
@@ -141,7 +150,7 @@ async function refreshTokens(refreshToken, userAgent, ip) {
   return { user, accessToken: newAccess, refreshToken: newRefresh };
 }
 
-async function changePassword(userId, oldPassword, newPassword) {
+export async function changePassword(userId, oldPassword, newPassword) {
   const user = await User.findById(userId);
 
   const match = await bcrypt.compare(oldPassword, user.password);
@@ -154,14 +163,17 @@ async function changePassword(userId, oldPassword, newPassword) {
   user.password = await bcrypt.hash(newPassword, 10);
   await user.save();
 
+  // Tüm refresh token’ları iptal et
   await AuthToken.deleteMany({ user: userId });
 
   return true;
 }
 
-// orders / payments / shipping vs. için:
-// string token alır, geçerliyse payload döner, değilse null
-function verifyAccessToken(token) {
+// ------------------------------------------------------------------
+//  Token doğrulama helper (orders vs içinde kullanılacak)
+// ------------------------------------------------------------------
+
+export function verifyAccessToken(token) {
   try {
     return jwt.verify(token, ACCESS_TOKEN_SECRET);
   } catch {
@@ -169,8 +181,8 @@ function verifyAccessToken(token) {
   }
 }
 
-// named export + default export ikisini birden veriyoruz
-export {
+// İstersen default export da dursun
+const AuthService = {
   register,
   login,
   logout,
@@ -179,11 +191,4 @@ export {
   verifyAccessToken,
 };
 
-export default {
-  register,
-  login,
-  logout,
-  refreshTokens,
-  changePassword,
-  verifyAccessToken,
-};
+export default AuthService;
