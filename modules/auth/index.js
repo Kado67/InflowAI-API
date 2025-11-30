@@ -1,2 +1,5 @@
 // modules/auth/index.js
-module.exports = require('./routes');
+
+import router from "./routes.js";
+
+export default router;
