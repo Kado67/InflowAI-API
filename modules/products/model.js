@@ -1,7 +1,7 @@
 // modules/products/model.js
 // ÜRÜN ŞEMASI
 
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 const ProductSchema = new mongoose.Schema(
   {
@@ -13,26 +13,26 @@ const ProductSchema = new mongoose.Schema(
     // Kategori
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Category',
+      ref: "Category",
       required: false,
     },
 
     // Ürünü ekleyen kullanıcı (satıcı / mağaza sahibi)
     owner: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
     },
 
     // Tedarikçi (dropshipping tarafı için)
     supplier: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Supplier',
+      ref: "Supplier",
       required: false,
     },
 
     price: { type: Number, required: true },
-    currency: { type: String, default: 'TRY' },
+    currency: { type: String, default: "TRY" },
 
     oldPrice: { type: Number }, // indirim öncesi fiyat
     stock: { type: Number, default: 0 },
@@ -62,6 +62,8 @@ const ProductSchema = new mongoose.Schema(
 );
 
 // Arama için index
-ProductSchema.index({ name: 'text', description: 'text' });
+ProductSchema.index({ name: "text", description: "text" });
 
-module.exports = mongoose.model('Product', ProductSchema);
+const Product = mongoose.model("Product", ProductSchema);
+
+export default Product;
