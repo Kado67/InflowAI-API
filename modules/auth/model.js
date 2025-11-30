@@ -1,40 +1,19 @@
 // modules/auth/model.js
-// Oturum / refresh token kayıtları
+// Refresh token kayıtları
 
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 const AuthTokenSchema = new mongoose.Schema(
   {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-      index: true,
-    },
-    refreshToken: {
-      type: String,
-      required: true,
-      index: true,
-      unique: true,
-    },
-    userAgent: {
-      type: String,
-    },
-    ip: {
-      type: String,
-    },
-    expiresAt: {
-      type: Date,
-      required: true,
-      index: true,
-    },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    refreshToken: { type: String, required: true },
+    expiresAt: { type: Date, required: true },
+    userAgent: { type: String },
+    ip: { type: String },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-// expiresAt zamanı gelince döküman otomatik silinsin
-AuthTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+const AuthToken = mongoose.model("AuthToken", AuthTokenSchema);
 
-module.exports = mongoose.model('AuthToken', AuthTokenSchema);
+export default AuthToken;
