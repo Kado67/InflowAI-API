@@ -1,155 +1,126 @@
 // modules/auth/controller.js
 
-const authService = require('./service');
+import * as AuthService from "./service.js";
 
-function getClientInfo(req) {
-  return {
-    userAgent: req.headers['user-agent'],
-    ip:
-      req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-      req.socket?.remoteAddress,
-  };
-}
-
-async function register(req, res) {
+export async function registerController(req, res, next) {
   try {
     const { name, email, password, phone } = req.body;
 
-    const result = await authService.register({ name, email, password, phone });
+    const result = await AuthService.register({
+      name,
+      email,
+      password,
+      phone,
+    });
 
     return res.status(201).json({
       success: true,
-      data: {
-        user: {
-          id: result.user._id,
-          name: result.user.name,
-          email: result.user.email,
-          role: result.user.role,
-        },
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-      },
+      message: "Kayıt başarılı.",
+      data: result,
     });
   } catch (err) {
-    return res.status(err.status || 500).json({
-      success: false,
-      message: err.message,
-    });
+    next(err);
   }
 }
 
-async function login(req, res) {
+export async function loginController(req, res, next) {
   try {
     const { email, password } = req.body;
-    const info = getClientInfo(req);
 
-    const result = await authService.login({
+    const userAgent = req.headers["user-agent"];
+    const ip =
+      req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress;
+
+    const result = await AuthService.login({
       email,
       password,
-      userAgent: info.userAgent,
-      ip: info.ip,
+      userAgent,
+      ip,
     });
 
     return res.json({
       success: true,
-      data: {
-        user: {
-          id: result.user._id,
-          name: result.user.name,
-          email: result.user.email,
-          role: result.user.role,
-        },
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-      },
+      message: "Giriş başarılı.",
+      data: result,
     });
   } catch (err) {
-    return res.status(err.status || 500).json({
-      success: false,
-      message: err.message,
-    });
+    next(err);
   }
 }
 
-async function logout(req, res) {
+export async function logoutController(req, res, next) {
   try {
-    const refreshToken =
-      req.body?.refreshToken ||
-      req.headers['x-refresh-token'] ||
-      req.cookies?.refreshToken;
+    const { refreshToken } = req.body;
 
-    await authService.logout(req.user.id, refreshToken);
+    // Access token'dan kullanıcıyı bul
+    const authHeader = req.headers.authorization || "";
+    const token = authHeader.split(" ")[1];
+    const payload = AuthService.verifyAccessToken(token);
+
+    if (!payload) {
+      return res.status(401).json({
+        success: false,
+        message: "Geçersiz erişim token.",
+      });
+    }
+
+    await AuthService.logout(payload.sub, refreshToken);
 
     return res.json({
       success: true,
       message: "Çıkış yapıldı.",
     });
   } catch (err) {
-    return res.status(err.status || 500).json({
-      success: false,
-      message: err.message,
-    });
+    next(err);
   }
 }
 
-async function refreshTokens(req, res) {
+export async function refreshTokensController(req, res, next) {
   try {
-    const refreshToken =
-      req.body?.refreshToken ||
-      req.headers['x-refresh-token'] ||
-      req.cookies?.refreshToken;
+    const { refreshToken } = req.body;
 
-    const info = getClientInfo(req);
+    const userAgent = req.headers["user-agent"];
+    const ip =
+      req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress;
 
-    const result = await authService.refreshTokens(
+    const result = await AuthService.refreshTokens(
       refreshToken,
-      info.userAgent,
-      info.ip
+      userAgent,
+      ip
     );
 
     return res.json({
       success: true,
-      data: {
-        user: {
-          id: result.user._id,
-          name: result.user.name,
-          email: result.user.email,
-          role: result.user.role,
-        },
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-      },
+      message: "Tokenlar yenilendi.",
+      data: result,
     });
   } catch (err) {
-    return res.status(err.status || 500).json({
-      success: false,
-      message: err.message,
-    });
+    next(err);
   }
 }
 
-async function changePassword(req, res) {
+export async function changePasswordController(req, res, next) {
   try {
     const { oldPassword, newPassword } = req.body;
 
-    await authService.changePassword(req.user.id, oldPassword, newPassword);
+    const authHeader = req.headers.authorization || "";
+    const token = authHeader.split(" ")[1];
+    const payload = AuthService.verifyAccessToken(token);
+
+    if (!payload) {
+      return res.status(401).json({
+        success: false,
+        message: "Geçersiz erişim token.",
+      });
+    }
+
+    await AuthService.changePassword(payload.sub, oldPassword, newPassword);
 
     return res.json({
       success: true,
       message: "Şifre güncellendi.",
     });
   } catch (err) {
-    return res.status(err.status || 500).json({
-      success: false,
-      message: err.message,
-    });
+    next(err);
   }
-}
-
-module.exports = {
-  register,
-  login,
-  logout,
-  refreshTokens,
-  changePassword,
-};
+      }
