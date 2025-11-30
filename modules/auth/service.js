@@ -1,22 +1,22 @@
 // modules/auth/service.js
 // Auth beyin – tüm iş mantığı burada
 
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const AuthToken = require('./model');
-const User = require('../users/model');
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import AuthToken from "./model.js";
+import User from "../users/model.js";
 
 const ACCESS_TOKEN_SECRET =
-  process.env.JWT_ACCESS_SECRET || 'CHANGE_THIS_ACCESS_SECRET';
+  process.env.JWT_ACCESS_SECRET || "CHANGE_THIS_ACCESS_SECRET";
 
 const REFRESH_TOKEN_SECRET =
-  process.env.JWT_REFRESH_SECRET || 'CHANGE_THIS_REFRESH_SECRET';
+  process.env.JWT_REFRESH_SECRET || "CHANGE_THIS_REFRESH_SECRET";
 
 const ACCESS_TOKEN_EXPIRES_IN =
-  process.env.JWT_ACCESS_EXPIRES_IN || '15m';
+  process.env.JWT_ACCESS_EXPIRES_IN || "15m";
 
 const REFRESH_TOKEN_EXPIRES_IN =
-  process.env.JWT_REFRESH_EXPIRES_IN || '30d';
+  process.env.JWT_REFRESH_EXPIRES_IN || "30d";
 
 function signAccessToken(user) {
   return jwt.sign(
@@ -159,6 +159,8 @@ async function changePassword(userId, oldPassword, newPassword) {
   return true;
 }
 
+// orders / payments / shipping vs. için:
+// string token alır, geçerliyse payload döner, değilse null
 function verifyAccessToken(token) {
   try {
     return jwt.verify(token, ACCESS_TOKEN_SECRET);
@@ -167,7 +169,17 @@ function verifyAccessToken(token) {
   }
 }
 
-module.exports = {
+// named export + default export ikisini birden veriyoruz
+export {
+  register,
+  login,
+  logout,
+  refreshTokens,
+  changePassword,
+  verifyAccessToken,
+};
+
+export default {
   register,
   login,
   logout,
