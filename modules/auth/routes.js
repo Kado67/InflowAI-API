@@ -1,43 +1,29 @@
 // modules/auth/routes.js
 
-const express = require('express');
+import express from "express";
+import {
+  registerController,
+  loginController,
+  logoutController,
+  refreshTokensController,
+  changePasswordController,
+} from "./controller.js";
+
 const router = express.Router();
-const controller = require('./controller');
-const { verifyAccessToken } = require('./service');
 
-// Middleware
-function requireAuth(req, res, next) {
-  const header = req.headers['authorization'];
+// POST /api/auth/register
+router.post("/register", registerController);
 
-  if (!header?.startsWith('Bearer ')) {
-    return res.status(401).json({
-      success: false,
-      message: "Token bulunamadı.",
-    });
-  }
+// POST /api/auth/login
+router.post("/login", loginController);
 
-  const token = header.split(" ")[1];
-  const payload = verifyAccessToken(token);
+// POST /api/auth/logout
+router.post("/logout", logoutController);
 
-  if (!payload) {
-    return res.status(401).json({
-      success: false,
-      message: "Token geçersiz.",
-    });
-  }
+// POST /api/auth/refresh
+router.post("/refresh", refreshTokensController);
 
-  req.user = { id: payload.sub, role: payload.role };
+// POST /api/auth/change-password
+router.post("/change-password", changePasswordController);
 
-  next();
-}
-
-// Public
-router.post('/register', controller.register);
-router.post('/login', controller.login);
-router.post('/refresh', controller.refreshTokens);
-
-// Protected
-router.post('/logout', requireAuth, controller.logout);
-router.post('/change-password', requireAuth, controller.changePassword);
-
-module.exports = router;
+export default router;
