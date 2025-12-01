@@ -19,7 +19,7 @@ const REFRESH_TOKEN_EXPIRES_IN =
   process.env.JWT_REFRESH_EXPIRES_IN || "30d";
 
 // ------------------------------------------------------------------
-//  Yardımcı fonksiyonlar
+//  Token oluşturucular
 // ------------------------------------------------------------------
 
 function signAccessToken(user) {
@@ -52,7 +52,7 @@ async function saveRefreshToken(userId, refreshToken, userAgent, ip) {
 }
 
 // ------------------------------------------------------------------
-//  İş mantığı
+//  Auth Servisleri
 // ------------------------------------------------------------------
 
 export async function register({ name, email, password, phone }) {
@@ -139,7 +139,6 @@ export async function refreshTokens(refreshToken, userAgent, ip) {
 
   const user = tokenDoc.user;
 
-  // Eski token’ı sil
   await AuthToken.deleteOne({ _id: tokenDoc._id });
 
   const newAccess = signAccessToken(user);
@@ -163,15 +162,10 @@ export async function changePassword(userId, oldPassword, newPassword) {
   user.password = await bcrypt.hash(newPassword, 10);
   await user.save();
 
-  // Tüm refresh token’ları iptal et
   await AuthToken.deleteMany({ user: userId });
 
   return true;
 }
-
-// ------------------------------------------------------------------
-//  Token doğrulama helper (orders vs içinde kullanılacak)
-// ------------------------------------------------------------------
 
 export function verifyAccessToken(token) {
   try {
@@ -181,8 +175,7 @@ export function verifyAccessToken(token) {
   }
 }
 
-// İstersen default export da dursun
-const AuthService = {
+export default {
   register,
   login,
   logout,
@@ -190,5 +183,3 @@ const AuthService = {
   changePassword,
   verifyAccessToken,
 };
-
-export default AuthService;
