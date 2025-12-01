@@ -1,3 +1,15 @@
-// modules/orders/index.js
-import routes from "./routes.js";
-export default routes;
+import express from "express";
+import Order from "./model.js";
+
+const router = express.Router();
+
+router.get("/", async (req, res, next) => {
+  try {
+    const orders = await Order.find();
+    res.json({ success: true, orders });
+  } catch (err) {
+    next(err);
+  }
+});
+
+export default router;
