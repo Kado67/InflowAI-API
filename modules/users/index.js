@@ -1,2 +1,6 @@
 // modules/users/index.js
-module.exports = require('./routes');
+// app.js buradan import ediyor
+
+import router from "./routes.js";
+
+export default router;
