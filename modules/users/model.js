@@ -1,3 +1,5 @@
+// modules/users/model.js
+
 import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema(
@@ -30,8 +32,7 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const User = mongoose.model("User", UserSchema);
+// *** EN ÖNEMLİ SATIR: Overwrite hatasını engeller ***
+const User = mongoose.models.User || mongoose.model("User", UserSchema);
 
-// *** BUNLAR OLMADAN Render çalışmaz ***
 export default User;
-export { User };
