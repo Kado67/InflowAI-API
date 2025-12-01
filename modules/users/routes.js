@@ -1,41 +1,22 @@
 // modules/users/routes.js
+// /api/users altında çalışan router
 
-const express = require('express');
+import express from "express";
+import {
+  getUsers,
+  getUser,
+  createUser,
+  updateUser,
+  removeUser,
+} from "./controller.js";
+
 const router = express.Router();
-const controller = require('./controller');
-const { verifyAccessToken } = require('../auth/service');
 
-// middleware
-function requireAuth(req, res, next) {
-  const header = req.headers["authorization"];
-  if (!header?.startsWith("Bearer ")) {
-    return res.status(401).json({
-      success: false,
-      message: "Token yok.",
-    });
-  }
+// İstersen buraya auth middleware ekleyebilirsin (şimdilik boş)
+router.get("/", getUsers);
+router.get("/:id", getUser);
+router.post("/", createUser);
+router.patch("/:id", updateUser);
+router.delete("/:id", removeUser);
 
-  const token = header.split(" ")[1];
-  const payload = verifyAccessToken(token);
-
-  if (!payload) {
-    return res.status(401).json({
-      success: false,
-      message: "Token geçersiz.",
-    });
-  }
-
-  req.user = { id: payload.sub, role: payload.role };
-  next();
-}
-
-// ROUTES
-router.get('/profile', requireAuth, controller.getProfile);
-router.put('/profile', requireAuth, controller.updateProfile);
-
-router.post('/addresses', requireAuth, controller.addAddress);
-router.get('/addresses', requireAuth, controller.listAddresses);
-router.put('/addresses/:addressId', requireAuth, controller.updateAddress);
-router.delete('/addresses/:addressId', requireAuth, controller.deleteAddress);
-
-module.exports = router;
+export default router;
