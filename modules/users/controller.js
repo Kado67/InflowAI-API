@@ -1,112 +1,76 @@
 // modules/users/controller.js
+// Express controller – request/response burada
 
-const userService = require('./service');
+import * as userService from "./service.js";
 
-async function getProfile(req, res) {
+export async function getUsers(req, res, next) {
   try {
-    const profile = await userService.getProfile(req.user.id);
-
-    return res.json({
-      success: true,
-      data: profile,
-    });
+    const users = await userService.listUsers();
+    res.json({ success: true, data: users });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    next(err);
   }
 }
 
-async function updateProfile(req, res) {
+export async function getUser(req, res, next) {
   try {
-    const updated = await userService.updateProfile(req.user.id, req.body);
+    const { id } = req.params;
+    const user = await userService.getUserById(id);
 
-    return res.json({
-      success: true,
-      data: updated,
-    });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Kullanıcı bulunamadı.",
+      });
+    }
+
+    res.json({ success: true, data: user });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    next(err);
   }
 }
 
-async function addAddress(req, res) {
+export async function createUser(req, res, next) {
   try {
-    const list = await userService.addAddress(req.user.id, req.body);
-
-    return res.json({
-      success: true,
-      data: list,
-    });
+    const user = await userService.createUser(req.body);
+    res.status(201).json({ success: true, data: user });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    next(err);
   }
 }
 
-async function updateAddress(req, res) {
+export async function updateUser(req, res, next) {
   try {
-    const updated = await userService.updateAddress(
-      req.user.id,
-      req.params.addressId,
-      req.body
-    );
+    const { id } = req.params;
+    const user = await userService.updateUser(id, req.body);
 
-    return res.json({
-      success: true,
-      data: updated,
-    });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Kullanıcı bulunamadı.",
+      });
+    }
+
+    res.json({ success: true, data: user });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    next(err);
   }
 }
 
-async function deleteAddress(req, res) {
+export async function removeUser(req, res, next) {
   try {
-    await userService.deleteAddress(req.user.id, req.params.addressId);
+    const { id } = req.params;
+    const user = await userService.deleteUser(id);
 
-    return res.json({
-      success: true,
-      message: "Adres silindi.",
-    });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Kullanıcı bulunamadı.",
+      });
+    }
+
+    res.json({ success: true, message: "Kullanıcı silindi." });
   } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    next(err);
   }
 }
-
-async function listAddresses(req, res) {
-  try {
-    const list = await userService.listAddresses(req.user.id);
-
-    return res.json({
-      success: true,
-      data: list,
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
-}
-
-module.exports = {
-  getProfile,
-  updateProfile,
-  addAddress,
-  updateAddress,
-  deleteAddress,
-  listAddresses,
-};
