@@ -1,5 +1,7 @@
 // modules/auth/index.js
 
-import router from "./routes.js";
+import routes from "./routes.js";
 
-export default router;
+export default {
+  routes,
+};
