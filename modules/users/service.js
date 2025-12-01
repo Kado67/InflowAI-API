@@ -1,55 +1,46 @@
 // modules/users/service.js
+// Veritabanı ile konuşan katman (iş mantığı)
 
-const User = require('./model');
+import { User } from "./model.js";
 
-async function getProfile(userId) {
-  return User.findById(userId).select("-password");
+export async function listUsers() {
+  return User.find({ isDeleted: false }).select("-password").lean();
 }
 
-async function updateProfile(userId, data) {
-  return User.findByIdAndUpdate(userId, data, { new: true })
-    .select("-password");
+export async function getUserById(id) {
+  return User.findOne({ _id: id, isDeleted: false }).select("-password").lean();
 }
 
-async function addAddress(userId, addressData) {
-  const user = await User.findById(userId);
-  user.addresses.push(addressData);
-  await user.save();
-  return user.addresses;
+export async function createUser(data) {
+  // Şimdilik basit oluşturma – şifre hash işlemini auth tarafı yapıyor
+  const user = await User.create(data);
+  const obj = user.toObject();
+  delete obj.password;
+  return obj;
 }
 
-async function updateAddress(userId, addressId, data) {
-  const user = await User.findById(userId);
+export async function updateUser(id, data) {
+  if (data.password) {
+    // Güvenlik için buradan şifre güncellemeyelim
+    delete data.password;
+  }
 
-  const addr = user.addresses.id(addressId);
-  if (!addr) throw new Error("Adres bulunamadı.");
+  const user = await User.findOneAndUpdate(
+    { _id: id, isDeleted: false },
+    data,
+    { new: true }
+  ).select("-password");
 
-  Object.assign(addr, data);
-  await user.save();
-  return addr;
+  return user;
 }
 
-async function deleteAddress(userId, addressId) {
-  const user = await User.findById(userId);
+export async function deleteUser(id) {
+  // Soft delete
+  const user = await User.findOneAndUpdate(
+    { _id: id, isDeleted: false },
+    { isDeleted: true, isActive: false },
+    { new: true }
+  ).select("-password");
 
-  const addr = user.addresses.id(addressId);
-  if (!addr) throw new Error("Adres bulunamadı.");
-
-  addr.deleteOne();
-  await user.save();
-  return true;
+  return user;
 }
-
-async function listAddresses(userId) {
-  const user = await User.findById(userId);
-  return user.addresses;
-}
-
-module.exports = {
-  getProfile,
-  updateProfile,
-  addAddress,
-  updateAddress,
-  deleteAddress,
-  listAddresses,
-};
