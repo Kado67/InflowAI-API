@@ -3,8 +3,14 @@
 
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+
+// MODELLER
 import AuthToken from "./model.js";
-import User from "../users/model.js";
+import User from "../users/model.js";   // <-- DOĞRU, default import
+
+// ------------------------------------------------------------------
+// ENV değişkenleri
+// ------------------------------------------------------------------
 
 const ACCESS_TOKEN_SECRET =
   process.env.JWT_ACCESS_SECRET || "CHANGE_THIS_ACCESS_SECRET";
@@ -19,7 +25,7 @@ const REFRESH_TOKEN_EXPIRES_IN =
   process.env.JWT_REFRESH_EXPIRES_IN || "30d";
 
 // ------------------------------------------------------------------
-//  Token oluşturucular
+// TOKEN ÜRETİCİLER
 // ------------------------------------------------------------------
 
 function signAccessToken(user) {
@@ -52,7 +58,7 @@ async function saveRefreshToken(userId, refreshToken, userAgent, ip) {
 }
 
 // ------------------------------------------------------------------
-//  Auth Servisleri
+// REGISTER
 // ------------------------------------------------------------------
 
 export async function register({ name, email, password, phone }) {
@@ -82,6 +88,10 @@ export async function register({ name, email, password, phone }) {
   return { user, accessToken, refreshToken };
 }
 
+// ------------------------------------------------------------------
+// LOGIN
+// ------------------------------------------------------------------
+
 export async function login({ email, password, userAgent, ip }) {
   const user = await User.findOne({ email });
 
@@ -109,9 +119,17 @@ export async function login({ email, password, userAgent, ip }) {
   return { user, accessToken, refreshToken };
 }
 
+// ------------------------------------------------------------------
+// LOGOUT
+// ------------------------------------------------------------------
+
 export async function logout(userId, refreshToken) {
   await AuthToken.deleteOne({ user: userId, refreshToken });
 }
+
+// ------------------------------------------------------------------
+// REFRESH
+// ------------------------------------------------------------------
 
 export async function refreshTokens(refreshToken, userAgent, ip) {
   if (!refreshToken) {
@@ -139,6 +157,7 @@ export async function refreshTokens(refreshToken, userAgent, ip) {
 
   const user = tokenDoc.user;
 
+  // Eski refresh token'ı sil
   await AuthToken.deleteOne({ _id: tokenDoc._id });
 
   const newAccess = signAccessToken(user);
@@ -148,6 +167,10 @@ export async function refreshTokens(refreshToken, userAgent, ip) {
 
   return { user, accessToken: newAccess, refreshToken: newRefresh };
 }
+
+// ------------------------------------------------------------------
+// CHANGE PASSWORD
+// ------------------------------------------------------------------
 
 export async function changePassword(userId, oldPassword, newPassword) {
   const user = await User.findById(userId);
@@ -162,10 +185,15 @@ export async function changePassword(userId, oldPassword, newPassword) {
   user.password = await bcrypt.hash(newPassword, 10);
   await user.save();
 
+  // Tüm refresh token'ları iptal et
   await AuthToken.deleteMany({ user: userId });
 
   return true;
 }
+
+// ------------------------------------------------------------------
+// ACCESS TOKEN DOĞRULAMA
+// ------------------------------------------------------------------
 
 export function verifyAccessToken(token) {
   try {
@@ -175,6 +203,7 @@ export function verifyAccessToken(token) {
   }
 }
 
+// DEFAULT EXPORT
 export default {
   register,
   login,
