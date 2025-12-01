@@ -1,6 +1,3 @@
-// modules/users/model.js
-// Kullanıcı şeması
-
 import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema(
@@ -33,5 +30,8 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// 🔹 Sadece NAMED export
-export const User = mongoose.model("User", UserSchema);
+const User = mongoose.model("User", UserSchema);
+
+// *** BUNLAR OLMADAN Render çalışmaz ***
+export default User;
+export { User };
