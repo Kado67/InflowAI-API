@@ -1,18 +1,38 @@
-// modules/auth/model.js
-// Refresh token kayıtları
+// src/modules/users/model.js
+// Kullanıcı şeması
 
 import mongoose from "mongoose";
 
-const AuthTokenSchema = new mongoose.Schema(
+const UserSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    refreshToken: { type: String, required: true },
-    expiresAt: { type: Date, required: true },
-    userAgent: { type: String },
-    ip: { type: String },
+    name: { type: String, required: true, trim: true },
+
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+
+    phone: { type: String },
+
+    password: { type: String, required: true },
+
+    role: {
+      type: String,
+      enum: ["user", "admin", "seller"],
+      default: "user",
+    },
+
+    isActive: { type: Boolean, default: true },
+    isDeleted: { type: Boolean, default: false },
+
+    lastLoginAt: { type: Date },
   },
   { timestamps: true }
 );
 
-const AuthToken = mongoose.model("AuthToken", AuthTokenSchema);
-export default AuthToken;
+const User = mongoose.model("User", UserSchema);
+
+export default User;
