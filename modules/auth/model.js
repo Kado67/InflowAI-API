@@ -35,4 +35,6 @@ const UserSchema = new mongoose.Schema(
 
 const User = mongoose.model("User", UserSchema);
 
+// Hem default, hem named export veriyoruz
 export default User;
+export { User };
