@@ -1,6 +1,8 @@
+// feedRoutes.js
 const express = require("express");
 const router = express.Router();
 
+// Ürün modeli
 const Product = require("./modules/products/model");
 
 router.get("/products-xml", async (req, res) => {
@@ -25,8 +27,10 @@ router.get("/products-xml", async (req, res) => {
     res.set("Content-Type", "application/xml");
     res.send(xml);
   } catch (err) {
+    console.error("XML üretim hatası:", err);
     res.status(500).send("XML üretilemedi");
   }
 });
 
+// ÖNEMLİ: CommonJS export
 module.exports = router;
