@@ -1,8 +1,6 @@
-// feedRoutes.js
 const express = require("express");
 const router = express.Router();
 
-// Ürün modelini hem CommonJS hem ESM durumunda yakalamak için:
 const ProductModule = require("./modules/products/model");
 const Product = ProductModule.default || ProductModule;
 
