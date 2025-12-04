@@ -1,12 +1,10 @@
-// index.js — InflowAI API (ES MODULE uyumlu)
-
-import app from "./app.js";
-import http from "http";
+const app = require("./app");
+const http = require("http");
 
 const server = http.createServer(app);
 
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
-  console.log(`InflowAI API çalışıyor → PORT ${PORT}`);
+  console.log(`InflowAI API çalışıyor → PORT: ${PORT}`);
 });
