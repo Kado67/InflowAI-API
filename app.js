@@ -9,6 +9,9 @@ const orderRoutes    = require("./modules/orders/routes");
 const supplierRoutes = require("./modules/suppliers/routes");
 const feedRoutes     = require("./feedRoutes");
 
+// 👉 YENİ EKLEDİĞİMİZ ADMIN ROUTE
+const adminRoutes    = require("./modules/admin/routes");
+
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -26,12 +29,16 @@ mongoose
   .then(() => console.log("MongoDB bağlandı"))
   .catch((err) => console.error("MongoDB hata:", err));
 
-// Route eklemeleri
-app.use("/api/products",  wrapRouter(productRoutes));
-app.use("/api/users",     wrapRouter(userRoutes));
-app.use("/api/orders",    wrapRouter(orderRoutes));
-app.use("/api/suppliers", wrapRouter(supplierRoutes));
-app.use("/api",           wrapRouter(feedRoutes));
+// ------------------------------------------------------
+// 🔥 ROUTE EKLEMELERİ — ADMIN DAHİL TAM SETUP
+// ------------------------------------------------------
+
+app.use("/api/admin",    wrapRouter(adminRoutes));      // ➤ ADMIN LOGIN (YENİ)
+app.use("/api/products", wrapRouter(productRoutes));
+app.use("/api/users",    wrapRouter(userRoutes));
+app.use("/api/orders",   wrapRouter(orderRoutes));
+app.use("/api/suppliers",wrapRouter(supplierRoutes));
+app.use("/api",          wrapRouter(feedRoutes));
 
 app.get("/", (req, res) => {
   res.send("InflowAI API aktif");
