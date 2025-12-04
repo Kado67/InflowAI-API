@@ -1,27 +1,22 @@
-import express from "express";
-import cors from "cors";
-import mongoose from "mongoose";
+const express = require("express");
+const cors = require("cors");
+const mongoose = require("mongoose");
 
-import productRoutes from "./modules/products/routes.js";
-import userRoutes from "./modules/users/routes.js";
-import orderRoutes from "./modules/orders/routes.js";
-import supplierRoutes from "./modules/suppliers/routes.js";
+const productRoutes = require("./modules/products/routes");
+const userRoutes = require("./modules/users/routes");
+const orderRoutes = require("./modules/orders/routes");
+const supplierRoutes = require("./modules/suppliers/routes");
 
-import feedRoutes from "./feedRoutes.js";
+const feedRoutes = require("./feedRoutes");
 
 const app = express();
-
 app.use(express.json());
 app.use(cors());
 
-// Mongo bağlan
 mongoose
-  .connect(process.env.MONGO_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("MongoDB bağlandı"))
-  .catch((err) => console.error("MongoDB bağlantı hatası:", err));
+  .connect(process.env.MONGO_URL)
+  .then(() => console.log("Mongo bağlandı"))
+  .catch((err) => console.error(err));
 
 app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
@@ -33,4 +28,4 @@ app.get("/", (req, res) => {
   res.send("InflowAI API aktif");
 });
 
-export default app;
+module.exports = app;
