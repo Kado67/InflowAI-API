@@ -13,7 +13,6 @@ module.exports = function adminAuth(req, res, next) {
   }
 
   const parts = authHeader.split(" ");
-
   if (parts.length !== 2 || parts[0] !== "Bearer") {
     return res
       .status(401)
@@ -31,10 +30,8 @@ module.exports = function adminAuth(req, res, next) {
         .json({ success: false, message: "Admin yetkisi bulunmuyor." });
     }
 
-    // İstersen ileride kullanmak için:
-    req.admin = decoded;
-
-    return next();
+    req.admin = decoded; // gerekirse kullanırsın
+    next();
   } catch (err) {
     console.error("Admin token doğrulama hatası:", err.message);
     return res
