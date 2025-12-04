@@ -2,7 +2,6 @@
 const express = require("express");
 const router = express.Router();
 
-// Ürün modeli
 const Product = require("./modules/products/model");
 
 router.get("/products-xml", async (req, res) => {
@@ -32,5 +31,4 @@ router.get("/products-xml", async (req, res) => {
   }
 });
 
-// ÖNEMLİ: CommonJS export
-module.exports = router;
+module.exports = router;   // 🔥 EN ÖNEMLİ SATIR
