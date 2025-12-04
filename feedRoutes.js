@@ -31,4 +31,4 @@ router.get("/products-xml", async (req, res) => {
   }
 });
 
-module.exports = router;   // 🔥 EN ÖNEMLİ SATIR
+module.exports = router;
