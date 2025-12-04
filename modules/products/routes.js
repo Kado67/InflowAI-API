@@ -1,30 +1,27 @@
 // modules/products/routes.js
 
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const controller = require("./controller");
-const { verifyAccessToken } = require("../auth/service");
+const controller = require('./controller');
+const { verifyAccessToken } = require('../auth/service');
 
-// 🔥 ADMIN JWT KONTROLÜ
-const adminAuth = require("../../middlewares/adminAuth");
-
-// --------- NORMAL KULLANICI / SATICI İÇİN AUTH ---------
+// auth middleware
 function requireAuth(req, res, next) {
-  const header = req.headers["authorization"];
-  if (!header?.startsWith("Bearer ")) {
+  const header = req.headers['authorization'];
+  if (!header?.startsWith('Bearer ')) {
     return res.status(401).json({
       success: false,
-      message: "Token yok.",
+      message: 'Token yok.',
     });
   }
 
-  const token = header.split(" ")[1];
+  const token = header.split(' ')[1];
   const payload = verifyAccessToken(token);
 
   if (!payload) {
     return res.status(401).json({
       success: false,
-      message: "Token geçersiz.",
+      message: 'Token geçersiz.',
     });
   }
 
@@ -32,16 +29,15 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// --------- PUBLIC (HERKESE AÇIK) ---------
-router.get("/", controller.listProducts);
-router.get("/:productId", controller.getProduct);
+// 🔓 PUBLIC (müşteri tarafı)
+router.get('/', controller.listProducts);
+router.get('/:productId', controller.getProduct);
 
-// --------- SATICI / KULLANICI KORUMALI ---------
-router.get("/me/list", requireAuth, controller.listSellerProducts);
-
-// --------- ADMIN PANEL İÇİN (SADECE ADMIN TOKEN) ---------
-router.post("/", adminAuth, controller.createProduct);
-router.put("/:productId", adminAuth, controller.updateProduct);
-router.delete("/:productId", adminAuth, controller.deleteProduct);
+// 🔐 PROTECTED (satıcı / tedarikçi / admin kullanıcı)
+// Burada tokeni olan herkes (rol kontrolünü controller içinde de yapabilirsin)
+router.get('/me/list', requireAuth, controller.listSellerProducts);
+router.post('/', requireAuth, controller.createProduct);
+router.put('/:productId', requireAuth, controller.updateProduct);
+router.delete('/:productId', requireAuth, controller.deleteProduct);
 
 module.exports = router;
