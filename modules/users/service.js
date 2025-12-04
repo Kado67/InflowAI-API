@@ -1,7 +1,7 @@
 // modules/users/service.js
 // Veritabanı ile konuşan katman (iş mantığı)
 
-import { User } from "./model.js";
+import User from "./model.js"; // ← DÜZELTİLMİŞ SATIR
 
 export async function listUsers() {
   return User.find({ isDeleted: false }).select("-password").lean();
