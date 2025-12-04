@@ -1,6 +1,8 @@
+// feedRoutes.js
 const express = require("express");
 const router = express.Router();
 
+// ESM default export + CommonJS uyumu için:
 const ProductModule = require("./modules/products/model");
 const Product = ProductModule.default || ProductModule;
 
@@ -16,7 +18,7 @@ router.get("/products-xml", async (req, res) => {
     <id>${p._id}</id>
     <name><![CDATA[${p.name || ""}]]></name>
     <price>${p.price || 0}</price>
-    <image><![CDATA[${p.image || ""}]]></image>
+    <image><![CDATA[${(p.images && p.images[0]) || ""}]]></image>
     <stock>${p.stock || 0}</stock>
   </product>`;
     });
