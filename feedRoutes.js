@@ -1,8 +1,6 @@
-// feedRoutes.js
 const express = require("express");
 const router = express.Router();
 
-// ÜRÜN MODELİ — senin yoluna göre DOĞRU olan:
 const Product = require("./modules/products/model");
 
 router.get("/products-xml", async (req, res) => {
@@ -27,7 +25,6 @@ router.get("/products-xml", async (req, res) => {
     res.set("Content-Type", "application/xml");
     res.send(xml);
   } catch (err) {
-    console.error("XML üretim hatası:", err);
     res.status(500).send("XML üretilemedi");
   }
 });
