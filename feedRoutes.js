@@ -2,7 +2,9 @@
 const express = require("express");
 const router = express.Router();
 
-const Product = require("./modules/products/model");
+// Ürün modelini hem CommonJS hem ESM durumunda yakalamak için:
+const ProductModule = require("./modules/products/model");
+const Product = ProductModule.default || ProductModule;
 
 router.get("/products-xml", async (req, res) => {
   try {
