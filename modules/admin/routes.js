@@ -1,6 +1,7 @@
 // modules/admin/routes.js
 const express = require("express");
-const jwt = require("jsonwebtoken");
+// Diğer tüm token’larla aynı sistemi kullanalım:
+const { generateAccessToken } = require("../auth/service");
 
 const router = express.Router();
 
@@ -8,7 +9,6 @@ const router = express.Router();
 // İstersen bunları .env içine taşırsın.
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@inflowai.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "InflowAI2025!";
-const JWT_SECRET = process.env.JWT_SECRET || "SUPER_SECRET_KEY_DEGISTIR";
 
 // ➤ POST /api/admin/login
 router.post("/login", (req, res) => {
@@ -27,15 +27,12 @@ router.post("/login", (req, res) => {
   }
 
   try {
-    // TOKEN OLUŞTURUYORUZ
-    const token = jwt.sign(
-      {
-        role: "admin",
-        email: ADMIN_EMAIL,
-      },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    // TOKEN OLUŞTURUYORUZ (auth/service ile aynı format)
+    const token = generateAccessToken({
+      sub: "admin-root",      // sabit bir id; istersen "admin" da yazabilirsin
+      role: "admin",
+      email: ADMIN_EMAIL,
+    });
 
     return res.json({
       success: true,
