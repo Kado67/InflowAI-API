@@ -23,7 +23,18 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// Sadece admin yönetir
+/**
+ * 🔸 Mağaza Aç formu (public)
+ * POST /api/suppliers/register
+ * Burada auth istemiyoruz; herkes başvuru gönderebilsin.
+ * Controller.create, body'deki bilgileri kullanarak yeni bir kayıt açıyor.
+ */
+router.post("/register", Controller.create);
+
+/**
+ * 🔒 Aşağıdakiler sadece admin için (veya auth gerektiren endpointler)
+ * /api/suppliers/
+ */
 router.post("/", requireAuth, Controller.create);
 router.get("/", requireAuth, Controller.list);
 router.get("/:id", requireAuth, Controller.get);
