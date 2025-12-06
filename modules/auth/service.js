@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 
 // MODELLER
 import AuthToken from "./model.js";
-import User from "../users/model.js";   // <-- DOĞRU, default import
+import User from "../users/model.js"; // default import
 
 // ------------------------------------------------------------------
 // ENV değişkenleri
@@ -60,13 +60,39 @@ async function saveRefreshToken(userId, refreshToken, userAgent, ip) {
 // ------------------------------------------------------------------
 // REGISTER
 // ------------------------------------------------------------------
-
-export async function register({ name, email, password, phone }) {
+// body:
+// - Normal üye:  { name, email, password, phone }
+// - Tedarikçi:   { name, email, password, phone, role:"supplier", storeName, website }
+export async function register({
+  name,
+  email,
+  password,
+  phone,
+  role,
+  storeName,
+  website,
+}) {
   const exist = await User.findOne({ email });
   if (exist) {
     const error = new Error("Bu e‑posta zaten kullanımda.");
     error.status = 400;
     throw error;
+  }
+
+  if (!password) {
+    const error = new Error("Şifre zorunludur.");
+    error.status = 400;
+    throw error;
+  }
+
+  // Rol / status belirleme
+  let finalRole = "user";
+  let status = "active";
+
+  // Mağaza aç formundan gelen tedarikçi
+  if (role === "supplier") {
+    finalRole = "supplier";
+    status = "pending"; // admin onayı bekler
   }
 
   const hashed = await bcrypt.hash(password, 10);
@@ -76,7 +102,10 @@ export async function register({ name, email, password, phone }) {
     email,
     phone,
     password: hashed,
-    role: "user",
+    role: finalRole,
+    status,
+    storeName,
+    website,
     isActive: true,
   });
 
@@ -91,13 +120,19 @@ export async function register({ name, email, password, phone }) {
 // ------------------------------------------------------------------
 // LOGIN
 // ------------------------------------------------------------------
-
+// Body: { email, password, userAgent, ip }
 export async function login({ email, password, userAgent, ip }) {
   const user = await User.findOne({ email });
 
-  if (!user) {
+  if (!user || user.isDeleted) {
     const error = new Error("Kullanıcı bulunamadı.");
     error.status = 400;
+    throw error;
+  }
+
+  if (!user.isActive) {
+    const error = new Error("Hesabınız pasif durumda.");
+    error.status = 403;
     throw error;
   }
 
@@ -106,6 +141,22 @@ export async function login({ email, password, userAgent, ip }) {
     const error = new Error("Şifre hatalı.");
     error.status = 400;
     throw error;
+  }
+
+  // Tedarikçi onay kontrolü
+  if (user.role === "supplier") {
+    if (user.status === "pending") {
+      const error = new Error("Mağazanız henüz onaylanmamış. Lütfen onay bekleyin.");
+      error.status = 403;
+      throw error;
+    }
+
+    if (user.status === "blocked") {
+      const error = new Error("Mağazanız engellenmiş. Lütfen destek ile iletişime geçin.");
+      error.status = 403;
+      throw error;
+    }
+    // status === "active" ise devam edip token üretmesine izin veriyoruz
   }
 
   const accessToken = signAccessToken(user);
