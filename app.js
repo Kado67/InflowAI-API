@@ -21,9 +21,6 @@ const uploadRoutes = require("./modules/upload/routes");
 // 👉 Admin tarafı tedarikçi onay sistemi
 const adminSupplierRoutes = require("./modules/adminSuppliers/routes");
 
-// 👉 Admin tarafı ilan onay sistemi
-const adminListingRoutes = require("./modules/adminListings/routes");
-
 // 👉 Sepet sistemi
 const cartRoutes = require("./modules/cart/routes");
 
@@ -63,7 +60,6 @@ app.use("/api/upload",    wrapRouter(uploadRoutes));         // Fotoğraf yükle
 
 // ⭐ Admin yönetim modülleri ⭐
 app.use("/api/admin/suppliers", wrapRouter(adminSupplierRoutes)); // Tedarikçi onay / ret
-app.use("/api/admin/listings",  wrapRouter(adminListingRoutes));  // İlan onay / ret
 
 // ⭐ Sepet & Ödeme ⭐
 app.use("/api/cart",      wrapRouter(cartRoutes));               // Sepet işlemleri
