@@ -3,73 +3,89 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 
+// ⭐ Ana modüller
 const productRoutes  = require("./modules/products/routes");
 const userRoutes     = require("./modules/users/routes");
 const orderRoutes    = require("./modules/orders/routes");
 const supplierRoutes = require("./modules/suppliers/routes");
-const feedRoutes     = require("./feedRoutes");
 
-// 👉 Admin giriş / yönetim
+// ⭐ Admin login & panel
 const adminRoutes    = require("./modules/admin/routes");
 
-// 👉 Tedarikçi ürün paneli
+// ⭐ Tedarikçi panel (ürün yükleme)
 const supplierPanelRoutes = require("./modules/supplier/routes");
 
-// 👉 Resim upload sistemi
+// ⭐ Upload (fotoğraf)
 const uploadRoutes = require("./modules/upload/routes");
 
-// 👉 Admin tarafı tedarikçi onay sistemi
+// ⭐ Admin tedarikçi onay sistemi
 const adminSupplierRoutes = require("./modules/adminSuppliers/routes");
 
-// 👉 Sepet sistemi
+// ⭐ Sepet
 const cartRoutes = require("./modules/cart/routes");
 
-// 👉 Ödeme geçidi (iyzico / vb)
+// ⭐ Ödeme (Iyzico)
 const paymentsGatewayRoutes = require("./modules/paymentsGateway/routes");
+
+// ⭐ XML feed
+const feedRoutes = require("./feedRoutes");
+
+// ⭐ KATEGORİLER (YENİ EKLENDİ!)
+const categoriesRoutes = require("./modules/categories/routes");
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// --- BURASI ÖNEMLİ: ESM / CJS karışıklığını çözen wrapper ---
+// --- ESM/CJS router wrapper ---
 function wrapRouter(mod) {
   return mod && mod.default ? mod.default : mod;
 }
-// ------------------------------------------------------
 
-// Mongo bağlantısı
+// 🔥 MongoDB bağlanıyor
 mongoose
   .connect(process.env.MONGO_URL)
   .then(() => console.log("MongoDB bağlandı"))
   .catch((err) => console.error("MongoDB hata:", err));
 
+
 // ------------------------------------------------------
-// 🔥 ROUTELAR — TÜM SİSTEMİN TAM BAĞLANTISI
+// 🔥 ROUTELAR — TÜM API BAĞLANTILARI
 // ------------------------------------------------------
 
-// Genel API’ler
-app.use("/api/admin",     wrapRouter(adminRoutes));          // Admin login / panel
-app.use("/api/products",  wrapRouter(productRoutes));        // Ürünler (müşteri tarafı)
-app.use("/api/users",     wrapRouter(userRoutes));           // Kullanıcı işlemleri
-app.use("/api/orders",    wrapRouter(orderRoutes));          // Siparişler
-app.use("/api/suppliers", wrapRouter(supplierRoutes));       // Mağaza başvuruları
+// Admin
+app.use("/api/admin", wrapRouter(adminRoutes));
 
-// ⭐ Tedarikçi & upload ⭐
-app.use("/api/supplier",  wrapRouter(supplierPanelRoutes));  // Tedarikçi panel ürün yönetimi
-app.use("/api/upload",    wrapRouter(uploadRoutes));         // Fotoğraf yükleme
+// Ürün, kullanıcı, sipariş, mağaza
+app.use("/api/products",  wrapRouter(productRoutes));
+app.use("/api/users",     wrapRouter(userRoutes));
+app.use("/api/orders",    wrapRouter(orderRoutes));
+app.use("/api/suppliers", wrapRouter(supplierRoutes));
 
-// ⭐ Admin yönetim modülleri ⭐
-app.use("/api/admin/suppliers", wrapRouter(adminSupplierRoutes)); // Tedarikçi onay / ret
+// ⭐ KATEGORİ SYSTEMI — (FRONTEND ÇALIŞMASI İÇİN ZORUNLU)
+app.use("/api/categories", wrapRouter(categoriesRoutes));
 
-// ⭐ Sepet & Ödeme ⭐
-app.use("/api/cart",      wrapRouter(cartRoutes));               // Sepet işlemleri
-app.use("/api/payments",  wrapRouter(paymentsGatewayRoutes));    // Ödeme oturumu / doğrulama
+// Tedarikçi paneli (ürün yönetimi)
+app.use("/api/supplier", wrapRouter(supplierPanelRoutes));
+
+// Dosya yükleme
+app.use("/api/upload", wrapRouter(uploadRoutes));
+
+// Admin tedarikçi onay sistemi
+app.use("/api/admin/suppliers", wrapRouter(adminSupplierRoutes));
+
+// Sepet
+app.use("/api/cart", wrapRouter(cartRoutes));
+
+// Ödeme
+app.use("/api/payments", wrapRouter(paymentsGatewayRoutes));
 
 // XML feed
-app.use("/api",           wrapRouter(feedRoutes));           // XML feed
+app.use("/api", wrapRouter(feedRoutes));
 
 // ------------------------------------------------------
 
+// Test endpoint
 app.get("/", (req, res) => {
   res.send("InflowAI API aktif");
 });
