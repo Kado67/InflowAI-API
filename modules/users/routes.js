@@ -1,22 +1,31 @@
 // modules/users/routes.js
-// /api/users altında çalışan router
+import { Router } from "express";
+import * as Controller from "./controller.js";
 
-import express from "express";
-import {
-  getUsers,
-  getUser,
-  createUser,
-  updateUser,
-  removeUser,
-} from "./controller.js";
+const router = Router();
 
-const router = express.Router();
+// 🔥 PUBLIC REGISTER – Yeni Üyelik
+// POST /api/users/register
+router.post("/register", Controller.register);
 
-// İstersen buraya auth middleware ekleyebilirsin (şimdilik boş)
-router.get("/", getUsers);
-router.get("/:id", getUser);
-router.post("/", createUser);
-router.patch("/:id", updateUser);
-router.delete("/:id", removeUser);
+// LİSTELEME
+// GET /api/users
+router.get("/", Controller.getUsers);
+
+// TEK KULLANICI
+// GET /api/users/:id
+router.get("/:id", Controller.getUser);
+
+// ADMIN TARAFI İÇİN GENEL CREATE
+// POST /api/users
+router.post("/", Controller.createUser);
+
+// GÜNCELLE
+// PUT /api/users/:id
+router.put("/:id", Controller.updateUser);
+
+// SİL
+// DELETE /api/users/:id
+router.delete("/:id", Controller.removeUser);
 
 export default router;
